@@ -1,0 +1,26 @@
+#!/bin/bash
+
+source "$(dirname "$0")/_common.sh"
+
+ynh_script_progression --message="Updating TorrentNG binaries and WebUI..." --weight=2
+ynh_setup_source --dest_dir="$install_dir" --full_replace
+install_launch_script
+chown -R "$app:$app" "$install_dir"
+write_runtime_config "$path"
+if [[ "$deployment_mode" == "native" ]]; then
+	ynh_multimedia_build_main_dir
+	ynh_multimedia_addaccess "$app"
+	initialize_multimedia_access
+else
+	ynh_multimedia_build_main_dir
+	ynh_multimedia_addaccess "$app"
+	validate_storage_root
+fi
+
+ynh_script_progression --message="Refreshing service configuration..." --weight=1
+ynh_add_nginx_config
+ynh_add_systemd_config
+reconcile_peer_firewall
+ynh_systemctl --service="$app" --action=restart
+
+ynh_print_info --message="TorrentNG was upgraded. Existing app state, settings, and download payloads were preserved."

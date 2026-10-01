@@ -1,0 +1,21 @@
+#!/bin/bash
+
+source "$(dirname "$0")/_common.sh"
+
+ynh_restore_file --origin_path="$install_dir"
+ynh_restore_file --origin_path="$data_dir"
+install_launch_script
+write_runtime_config "$path"
+if [[ "$deployment_mode" == "native" ]]; then
+	ynh_multimedia_build_main_dir
+	ynh_multimedia_addaccess "$app"
+	initialize_multimedia_access
+else
+	ynh_multimedia_build_main_dir
+	ynh_multimedia_addaccess "$app"
+	validate_storage_root
+fi
+ynh_add_nginx_config
+ynh_add_systemd_config
+reconcile_peer_firewall
+ynh_systemctl --service="$app" --action=start
